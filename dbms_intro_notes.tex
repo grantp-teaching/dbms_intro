@@ -1,0 +1,252 @@
+\documentclass{pgnotes}
+
+\title{Database Management Systems}
+
+\begin{document}
+
+\maketitle
+
+\section{Database management systems (DBMS)}
+\label{sec:dbms}
+
+For overall history see \citep{grad:2009:history}. 
+
+\subsection{Client-server}
+
+Most database management systems run in a client-server model, \autoref{fig:dbms-client-server}.
+
+\autoimage{dbms_client_server}{Client-server DBMS}{dbms-client-server}
+
+The server process manages the data store and processes requests from clients.
+The server can be running on any of the following \textit{hosts}:
+\begin{itemize}
+\item Standard laptop / desktop computer
+\item Dedicated server computer (in a data centre environment)
+\item Cloud-based virtual host, called a compute instance. (e.g. Amazon EC2) 
+\item A managed database service provided by a cloud service provider (e.g. Amazon RDS, Azure, Google Cloud, IBM Cloud)
+\end{itemize}
+
+The client program accesses the server using a server-specific protocol.
+Clients normally access through IP networks using TCP on a specified port number.
+Examples of clients:
+\begin{itemize}
+\item Most databases have a simple command-line client that can send requests to the database and display results
+\item Apps can be written to access database servers using a client library.
+  \begin{itemize}
+  \item Generally the text-mode client uses this library internally too! 
+  \end{itemize}
+\end{itemize}
+
+Two things to note about the client:
+\begin{itemize}
+\item The client may in some cases be running on the same host as the server.
+\item Software that is the client of a DBMS may itself be a server.
+  \begin{itemize}
+  \item Example: a web application is written in Java using the Spring framework and provides a web server using an embedded Tomcat server. The web application is itself a client of the DBMS it accesses.
+  \end{itemize}
+\end{itemize}
+
+This also implies that there is a degree of concurrency, where multiple clients access the same database at the same time.
+
+\autoimage{dbms_concurrent_access}{Concurrent access to a DBMS hosting a college timetable}{dbms-concurrent-access}
+
+\section{Key terms}
+
+
+
+
+\section{Structured query language (SQL)}
+\label{sec:sql}
+
+For a general overview see \citep{chamberlain:2012:early}.
+
+
+\section{PostgreSQL}
+\label{sec:postgresql}
+
+We will focus on PostgreSQL as our primary database.
+Later on we will introduce other technologies. 
+Reasons:
+\begin{itemize}
+\item Support exists for geospatial data, JSON, XML, full-text search etc.
+\item It is free software and can be installed on any operating system.
+\end{itemize}
+You should bookmark the \href{https://www.postgresql.org/docs/13/}{PostgreSQL} documentation.
+
+As we continue we will refer to PostgreSQL as Postgres for brevity.
+
+
+\subsection{Connecting to a remote host}
+
+\autoimage{ssh_psql_usage}{Using psql on a remote host over SSH}{ssh-psql-usage}
+
+
+
+
+\section{Database basics}
+
+Make sure you can connect to the SSH server given.
+(Note that this server will not be available outside the time period of this lab session.)
+
+\subsection{Running psql}
+
+Once logged in, we can use the \texttt{psql} command-line client to connect to the PostgreSQL server.
+Each server can host a number of databases independently of each other.
+Today we are going to use a database called \texttt{population}.
+
+\begin{verbatim}
+psql population
+\end{verbatim}
+
+Note the DBMS didn't ask us for a username/password.
+This is because it is setup to trust local connections with the same name as the login username. 
+Generally a DBMS will ask for a username/password.
+
+Once logged in you should see a prompt similar to:
+\begin{verbatim}
+psql (9.2.24)
+Type "help" for help.
+
+population=> 
+\end{verbatim}
+
+There are two types of command we will encounter:
+\begin{itemize}
+\item SQL statements to be executed by the server
+\item Client commands (that sometimes get expanded into server-side SQL). These are usually prefixed with a backslash. 
+\end{itemize}
+
+You can get a list of all client commands using \textbackslash ?.
+
+\subsection{Listing all tables}
+
+A database in its simplest form is like an Excel workbook.
+Just as an excel workbook has one or more sheets, a database may have one or more tables in it. 
+To find out the tables (and other objects) in our DB we can ask the database to describe the tables:
+\begin{verbatim}
+\dt
+\end{verbatim}
+Our population database has two tables:
+\begin{verbatim}
+           List of relations
+ Schema |    Name    | Type  |  Owner   
+--------+------------+-------+----------
+ public | directions | table | ec2-user
+ public | population | table | ec2-user
+(2 rows)
+\end{verbatim}
+
+\subsection{Describing a table}
+
+A table consists of a number of columns.
+Each row is a record.
+We can find out the schema definition using the client command \texttt{\d tablename}.
+To find out more about the \texttt{directions} table we could say:
+\begin{minted}{psql}
+\d directions
+\end{minted}
+Would give us:
+\begin{verbatim}
+    Table "public.directions"
+   Column   |  Type  | Modifiers 
+------------+--------+-----------
+ fullname   | text   | 
+ code       | text   | 
+ vertical   | bigint | 
+ horizontal | bigint | 
+\end{verbatim}
+
+\href{https://www.postgresql.org/docs/13/datatype.html}{Refer to datatypes in the PostgreSQL manual}
+
+\section{SELECT queries}
+
+We will review basic querying operations in SQL. 
+If you have experience already with relational databases (MySQL, Microsoft SQL, Oracle) you will find most of this section familiar.
+You should refer to the \href{https://www.postgresql.org/docs/13/queries.html}{queries section of the PostgreSQL manual} for further detail on the examples below.
+
+\subsection{Entire table}
+
+Selecting an entire table using the asterisk (*) to pick all columns.
+\begin{minted}{psql}
+select * from directions;
+\end{minted}
+Note that statements need to be terminated with the semicolon (;).
+If you omit the semicolon the prompt will change from \texttt{=>} to \texttt{->}.
+
+In PostgreSQL we can also use the shortened version
+\begin{minted}{psql}
+table directions;
+\end{minted}
+
+\subsection{Sorting}
+
+Unlike a spreadsheet, the order of rows in result sets from database queries is non-deterministic by default.
+They are \textit{not} necessarily alphabetical order, insertion order or any other pattern.
+We use the \texttt{ORDER BY} clause to enforce ordering:
+
+\begin{minted}{psql}
+select * from directions order by fullname asc;
+\end{minted}
+
+The order direction is either \texttt{asc} for ascending or \texttt{desc} for descending.
+
+See \href{https://www.postgresql.org/docs/13/queries-order.html}{sorting page of PostgreSQL manual} for further details.
+
+\subsection{Where clause}
+
+The \texttt{WHERE} clause limits the output
+\begin{minted}{psql}
+select * from directions where vertical=0;
+\end{minted}
+Text is best compared using the \texttt{LIKE} operator which allows \texttt{\%} to represent any text.
+\begin{minted}{psql}
+select * from directions where code like '%th'; 
+\end{minted}
+
+\subsection{Column specification}
+
+We can specify specific column names
+\begin{minted}{psql}
+select fullname, code from directions;
+\end{minted}
+
+\subsection{Column expressions}
+
+PostgreSQL supports powerful expressions that combine the values of different columns.
+The columns themselves need not be selected in the result set.
+\begin{minted}{psql}
+select fullname, code, vertical+horizontal from directions;
+\end{minted}
+
+\subsection{Column labels}
+
+Columns in the result set receive automatic names.
+These are normally the name of the column or are derived from an expression.
+We can assign specific names using the \texttt{AS} keyword.
+\begin{minted}{psql}
+select fullname, code, vertical+horizontal as hey from directions;
+\end{minted}
+See \href{https://www.postgresql.org/docs/13/queries-select-lists.html#QUERIES-COLUMN-LABELS}{column labels in PostgreSQL manual}.
+
+\section{Aggregate functions}
+
+Mastering aggregate functions will significantly improve your capabilities to query databases.
+You should refer to the \href{https://www.postgresql.org/docs/13/functions-aggregate.html}{aggregate functions section of the PostgreSQL manual} as you review the following examples.
+
+\subsection{Count}
+
+The simplest aggregate function is \texttt{COUNT} to return the number of rows matched by a specific query.
+At its simplest, we can tell the number of rows in a table. 
+
+\begin{minted}{psql}
+select count(*) from directions;
+select count(*) from population; 
+\end{minted}
+
+Count is often used with where to obtain the number of rows matching a specific condition:
+\begin{minted}{psql}
+select count(*) from directions where code like '%th'; 
+\end{minted}
+
+\end{document}
+
