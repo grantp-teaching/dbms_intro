@@ -8,6 +8,9 @@ yum -y update
 # install python3
 yum -y install python3
 
+# install git
+yum -y install git
+
 # repository for PostgreSQL package
 amazon-linux-extras install epel -y
 echo "[pgdg13]
